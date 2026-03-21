@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import ClientShell from "./components/ClientShell";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,7 +15,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Qwunk — AI-Powered Workflow Automation",
-  description: "Streamline your workflows with intelligent automation. Qwunk helps teams move faster with AI.",
+  description:
+    "Streamline your workflows with intelligent automation. Qwunk helps teams move faster with AI.",
 };
 
 export default function RootLayout({
@@ -27,7 +29,9 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <ClientShell>{children}</ClientShell>
+      </body>
     </html>
   );
 }

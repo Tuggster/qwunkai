@@ -5,12 +5,15 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type QwunkLore = Record<string, any>;
+
+export type Phase = "clean" | "corrupting" | "qwunk";
 
 interface RegisteredZone {
   id: string;
@@ -19,15 +22,17 @@ interface RegisteredZone {
   mutations: number;
   autoInterval: number | null;
   tags: string[];
+  /** Custom directive for this zone's LLM prompt */
+  directive?: string;
 }
 
 interface MutationContextValue {
   register: (zone: RegisteredZone) => void;
   unregister: (id: string) => void;
+  triggerMutation: () => Promise<void>;
   mutateRandom: () => Promise<void>;
   mutateZone: (id: string) => Promise<void>;
   mutateAll: () => Promise<void>;
-  mutateTagged: (tag: string) => Promise<void>;
   isMutating: boolean;
   totalMutations: number;
   zoneMutations: Record<string, number>;
@@ -35,6 +40,13 @@ interface MutationContextValue {
   stopPassiveQwunk: () => void;
   passiveActive: boolean;
   lore: QwunkLore | null;
+  phase: Phase;
+  getCachedHtml: (id: string) => string | null;
+  setCachedHtml: (id: string, html: string) => void;
+  /** Corruption level 0-100. Drives whole-page visual degradation. */
+  corruption: number;
+  /** Boost corruption (called on user interaction) */
+  addCorruption: (amount: number) => void;
 }
 
 const MutationCtx = createContext<MutationContextValue | null>(null);
@@ -45,31 +57,88 @@ export function useMutation() {
   return ctx;
 }
 
+function computePhase(corruption: number): Phase {
+  if (corruption < 15) return "clean";
+  if (corruption < 60) return "corrupting";
+  return "qwunk";
+}
+
 export function MutationProvider({ children }: { children: React.ReactNode }) {
   const zonesRef = useRef<Map<string, RegisteredZone>>(new Map());
   const [isMutating, setIsMutating] = useState(false);
   const [totalMutations, setTotalMutations] = useState(0);
-  const [zoneMutations, setZoneMutations] = useState<Record<string, number>>(
-    {}
-  );
+  const [zoneMutations, setZoneMutations] = useState<Record<string, number>>({});
   const [passiveActive, setPassiveActive] = useState(false);
   const passiveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const autoTimersRef = useRef<Map<string, ReturnType<typeof setInterval>>>(
-    new Map()
-  );
+  const autoTimersRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
   const inflightRef = useRef<Set<string>>(new Set());
 
-  // ── Lore state ──
+  // ── Corruption: 0→100 over ~45s, drives whole-page visual degradation ──
+  const [corruption, setCorruption] = useState(0);
+  const corruptionRef = useRef(0);
+  useEffect(() => { corruptionRef.current = corruption; }, [corruption]);
+
+  const addCorruption = useCallback((amount: number) => {
+    setCorruption((c) => Math.min(100, c + amount));
+  }, []);
+
+  // Auto-increment corruption (accelerating)
+  useEffect(() => {
+    // 5s clean period, then start corrupting
+    const startDelay = setTimeout(() => {
+      const tick = () => {
+        const c = corruptionRef.current;
+        if (c >= 100) return;
+
+        // Accelerating: slow at start, fast at end
+        let increment: number;
+        let delay: number;
+        if (c < 30) {
+          increment = 1;
+          delay = 550; // ~18s for 0-30
+        } else if (c < 60) {
+          increment = 1;
+          delay = 380; // ~11s for 30-60
+        } else {
+          increment = 1;
+          delay = 220; // ~9s for 60-100
+        }
+
+        setCorruption((prev) => Math.min(100, prev + increment));
+        setTimeout(tick, delay);
+      };
+      tick();
+    }, 5000);
+
+    return () => clearTimeout(startDelay);
+  }, []);
+
+  // Mutation cache — persists across page navigations
+  const mutationCacheRef = useRef<Map<string, string>>(new Map());
+  // Also store per-zone mutation counts so they persist
+  const zoneMutationCountsRef = useRef<Map<string, number>>(new Map());
+
+  // Lore
   const [lore, setLore] = useState<QwunkLore | null>(null);
   const loreRef = useRef<QwunkLore | null>(null);
   const loreInflightRef = useRef(false);
   const loreTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Keep ref in sync so callbacks always have latest lore
-  useEffect(() => {
-    loreRef.current = lore;
-  }, [lore]);
+  const phase = useMemo(() => computePhase(corruption), [corruption]);
+  const phaseRef = useRef(phase);
+  useEffect(() => { phaseRef.current = phase; }, [phase]);
+  useEffect(() => { loreRef.current = lore; }, [lore]);
 
+  // Cache accessors
+  const getCachedHtml = useCallback((id: string) => {
+    return mutationCacheRef.current.get(id) || null;
+  }, []);
+
+  const setCachedHtml = useCallback((id: string, html: string) => {
+    mutationCacheRef.current.set(id, html);
+  }, []);
+
+  // Lore
   const evolveLore = useCallback(async () => {
     if (loreInflightRef.current) return;
     loreInflightRef.current = true;
@@ -80,9 +149,7 @@ export function MutationProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ lore: loreRef.current }),
       });
       const data = await res.json();
-      if (data.lore) {
-        setLore(data.lore);
-      }
+      if (data.lore) setLore(data.lore);
     } catch (err) {
       console.error("Lore evolution failed:", err);
     } finally {
@@ -90,15 +157,11 @@ export function MutationProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // ── Lore evolution loop: evolve every 45-75s once passive is active ──
   const startLoreEngine = useCallback(() => {
     if (loreTimerRef.current) return;
-
-    // Initialize lore immediately
     evolveLore();
-
     const scheduleNext = () => {
-      const delay = 45000 + Math.random() * 30000;
+      const delay = 20000 + Math.random() * 15000; // lore evolves every 20-35s
       loreTimerRef.current = setTimeout(() => {
         evolveLore();
         scheduleNext();
@@ -107,14 +170,12 @@ export function MutationProvider({ children }: { children: React.ReactNode }) {
     scheduleNext();
   }, [evolveLore]);
 
-  // ── Zone mutations (now include lore) ──
+  // Core mutation
   const doMutate = useCallback(async (zone: RegisteredZone) => {
     if (inflightRef.current.has(zone.id)) return;
     inflightRef.current.add(zone.id);
-
     try {
       const currentHtml = zone.capture();
-
       const res = await fetch("/api/mutate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -123,13 +184,15 @@ export function MutationProvider({ children }: { children: React.ReactNode }) {
           currentHtml,
           mutationCount: zone.mutations,
           lore: loreRef.current,
+          phase: phaseRef.current,
+          directive: zone.directive || null,
         }),
       });
-
       const data = await res.json();
       if (data.html) {
         zone.inject(data.html);
         zone.mutations++;
+        zoneMutationCountsRef.current.set(zone.id, zone.mutations);
         setTotalMutations((t) => t + 1);
         setZoneMutations((prev) => ({
           ...prev,
@@ -141,7 +204,37 @@ export function MutationProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Pick zone based on phase
+  const pickZone = useCallback((): RegisteredZone | null => {
+    const c = corruptionRef.current;
+
+    // In qwunk phase (c>=60): always root
+    if (phaseRef.current === "qwunk") {
+      const root = zonesRef.current.get("__root__");
+      if (root) return root;
+    }
+
+    // From corruption 35+: increasing chance to hit root
+    // At 35: 20% root chance. At 55: 60% root chance.
+    if (c >= 35) {
+      const rootChance = 0.2 + ((c - 35) / 25) * 0.4;
+      if (Math.random() < rootChance) {
+        const root = zonesRef.current.get("__root__");
+        if (root) return root;
+      }
+    }
+
+    const zones = Array.from(zonesRef.current.values()).filter(
+      (z) => z.id !== "__root__"
+    );
+    if (zones.length === 0) return null;
+    return zones[Math.floor(Math.random() * zones.length)];
+  }, []);
+
   const register = useCallback((zone: RegisteredZone) => {
+    // Restore mutation count from cache
+    const cachedCount = zoneMutationCountsRef.current.get(zone.id);
+    if (cachedCount) zone.mutations = cachedCount;
     zonesRef.current.set(zone.id, zone);
   }, []);
 
@@ -154,80 +247,69 @@ export function MutationProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const mutateZone = useCallback(
-    async (id: string) => {
-      const zone = zonesRef.current.get(id);
-      if (!zone) return;
-      setIsMutating(true);
-      try {
-        await doMutate(zone);
-      } finally {
-        setIsMutating(false);
-      }
-    },
-    [doMutate]
-  );
+  const mutateZone = useCallback(async (id: string) => {
+    const zone = zonesRef.current.get(id);
+    if (!zone) return;
+    setIsMutating(true);
+    try { await doMutate(zone); } finally { setIsMutating(false); }
+  }, [doMutate]);
 
   const mutateRandom = useCallback(async () => {
-    const zones = Array.from(zonesRef.current.values());
-    if (zones.length === 0) return;
-    const zone = zones[Math.floor(Math.random() * zones.length)];
+    const zone = pickZone();
+    if (!zone) return;
     setIsMutating(true);
-    try {
-      await doMutate(zone);
-    } finally {
-      setIsMutating(false);
-    }
-  }, [doMutate]);
+    try { await doMutate(zone); } finally { setIsMutating(false); }
+  }, [doMutate, pickZone]);
 
   const mutateAll = useCallback(async () => {
-    const zones = Array.from(zonesRef.current.values());
+    if (phaseRef.current === "qwunk") {
+      const root = zonesRef.current.get("__root__");
+      if (root) {
+        setIsMutating(true);
+        try { await doMutate(root); } finally { setIsMutating(false); }
+      }
+      return;
+    }
+    const zones = Array.from(zonesRef.current.values()).filter(z => z.id !== "__root__");
     if (zones.length === 0) return;
     setIsMutating(true);
-    try {
-      await Promise.all(zones.map((z) => doMutate(z)));
-    } finally {
-      setIsMutating(false);
-    }
+    try { await Promise.all(zones.map(z => doMutate(z))); } finally { setIsMutating(false); }
   }, [doMutate]);
 
-  const mutateTagged = useCallback(
-    async (tag: string) => {
-      const zones = Array.from(zonesRef.current.values()).filter((z) =>
-        z.tags.includes(tag)
-      );
-      if (zones.length === 0) return;
-      const zone = zones[Math.floor(Math.random() * zones.length)];
-      await doMutate(zone);
-    },
-    [doMutate]
-  );
-
-  // ── Passive background mutation engine ──
-  const startPassiveQwunk = useCallback(() => {
+  // Main public API
+  const startPassiveQwunkFn = useCallback(() => {
     if (passiveTimerRef.current) return;
     setPassiveActive(true);
-
-    // Also start the lore engine
     startLoreEngine();
-
     const tick = () => {
-      const zones = Array.from(zonesRef.current.values());
-      if (zones.length === 0) return;
-      const zone = zones[Math.floor(Math.random() * zones.length)];
-      doMutate(zone);
+      const zone = pickZone();
+      if (zone) doMutate(zone);
     };
-
     tick();
     const scheduleNext = () => {
-      const delay = 15000 + Math.random() * 20000;
+      // Accelerate as corruption rises: 8s at start → 3s at high corruption
+      const c = corruptionRef.current;
+      const baseDelay = c > 60 ? 3000 : c > 35 ? 5000 : 8000;
+      const jitter = Math.random() * 4000;
+      const delay = baseDelay + jitter;
       passiveTimerRef.current = setTimeout(() => {
         tick();
         scheduleNext();
       }, delay);
     };
     scheduleNext();
-  }, [doMutate, startLoreEngine]);
+  }, [doMutate, pickZone, startLoreEngine]);
+
+  const triggerMutation = useCallback(async () => {
+    // Boost corruption on every user interaction
+    addCorruption(5 + Math.random() * 5);
+    if (!passiveTimerRef.current) {
+      startPassiveQwunkFn();
+    }
+    await mutateRandom();
+  }, [mutateRandom, startPassiveQwunkFn, addCorruption]);
+
+  const startPassiveQwunk = useCallback(() => startPassiveQwunkFn(), [startPassiveQwunkFn]);
 
   const stopPassiveQwunk = useCallback(() => {
     if (passiveTimerRef.current) {
@@ -241,25 +323,25 @@ export function MutationProvider({ children }: { children: React.ReactNode }) {
     setPassiveActive(false);
   }, []);
 
-  // ── Per-zone auto-mutation timers ──
+  // Per-zone auto timers (skip in qwunk phase)
   useEffect(() => {
     const checkAutoZones = setInterval(() => {
+      if (phaseRef.current === "qwunk") return;
       for (const [id, zone] of zonesRef.current) {
+        if (id === "__root__") continue;
         if (zone.autoInterval && !autoTimersRef.current.has(id)) {
           const jitter = Math.random() * 5000;
           const timer = setInterval(() => {
+            if (phaseRef.current === "qwunk") return;
             doMutate(zone);
           }, zone.autoInterval + jitter);
           autoTimersRef.current.set(id, timer);
         }
       }
     }, 2000);
-
     return () => {
       clearInterval(checkAutoZones);
-      for (const timer of autoTimersRef.current.values()) {
-        clearInterval(timer);
-      }
+      for (const timer of autoTimersRef.current.values()) clearInterval(timer);
     };
   }, [doMutate]);
 
@@ -268,10 +350,10 @@ export function MutationProvider({ children }: { children: React.ReactNode }) {
       value={{
         register,
         unregister,
+        triggerMutation,
         mutateRandom,
         mutateZone,
         mutateAll,
-        mutateTagged,
         isMutating,
         totalMutations,
         zoneMutations,
@@ -279,6 +361,11 @@ export function MutationProvider({ children }: { children: React.ReactNode }) {
         stopPassiveQwunk,
         passiveActive,
         lore,
+        phase,
+        getCachedHtml,
+        setCachedHtml,
+        corruption,
+        addCorruption,
       }}
     >
       {children}

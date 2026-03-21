@@ -3,7 +3,10 @@
     "allow": [
       "Bash(npx:*)",
       "Bash(npm run:*)",
-      "WebFetch(domain:qwunk.qwunk.com)"
+      "WebFetch(domain:qwunk.qwunk.com)",
+      "Bash(gh auth:*)",
+      "Bash(railway whoami:*)",
+      "Bash(git add:*)"
     ]
   }
 }

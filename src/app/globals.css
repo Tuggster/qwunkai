@@ -3,6 +3,20 @@
 :root {
   --background: #ffffff;
   --foreground: #0a0a0a;
+  --c: 0;
+  --c-hue: 0deg;
+  --c-saturate: 1;
+  --c-brightness: 1;
+  --c-contrast: 1;
+  --c-sepia: 0;
+  --c-blur: 0px;
+  --c-rotate: 0deg;
+  --c-skew: 0deg;
+  --c-noise: 0;
+  --c-scanline: 0;
+  --c-glitch: 0;
+  --c-dark: 0;
+  --c-neon: 0;
 }
 
 @theme inline {
@@ -12,118 +26,192 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* ═══════════════════════════════════════════════
+   CORRUPTION-DRIVEN BODY STYLES
+   The CorruptionEngine sets CSS vars; these apply them.
+   ═══════════════════════════════════════════════ */
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
-  transition: background-color 2s ease, color 2s ease;
+  transition: background-color 2s ease, color 2s ease, filter 0.3s ease;
+  filter:
+    hue-rotate(var(--c-hue))
+    saturate(var(--c-saturate))
+    brightness(var(--c-brightness))
+    contrast(var(--c-contrast))
+    sepia(var(--c-sepia))
+    blur(var(--c-blur));
 }
 
-/*
- * All the chaos CSS below exists but is NOT applied to any initial elements.
- * The LLM mutations will inject class names and elements that reference these.
- * The qwunk aesthetic is 100% emergent — it does not exist until the mutations create it.
- */
-
-/* ========= GLITCH (available for mutations to use) ========= */
-@keyframes glitch {
-  0% { text-shadow: 2px 0 #ff00ff, -2px 0 #00ffff; transform: translate(0); }
-  15% { text-shadow: -5px 3px #ff00ff, 5px -3px #00ffff; transform: translate(-3px, 2px) skewX(4deg); }
-  30% { text-shadow: 5px -2px #ff00ff, -5px 2px #00ffff; transform: translate(3px, -1px) skewX(-2deg); }
-  45% { text-shadow: -3px 4px #ff00ff, 3px -4px #00ffff; transform: translate(-2px, 4px) skewX(6deg); }
-  60% { text-shadow: 6px 2px #ff00ff, -6px -2px #00ffff; transform: translate(4px, -3px) skewX(-4deg); }
-  75% { text-shadow: -4px -3px #ff00ff, 4px 3px #00ffff; transform: translate(-1px, 2px) skewX(2deg); }
-  100% { text-shadow: 2px 0 #ff00ff, -2px 0 #00ffff; transform: translate(0); }
+/* Dark mode transition driven by --c-dark (0→1) */
+body.corruption-medium,
+body.corruption-heavy,
+body.corruption-extreme {
+  --background: color-mix(in srgb, #ffffff calc((1 - var(--c-dark)) * 100%), #0a0a0a);
+  --foreground: color-mix(in srgb, #0a0a0a calc((1 - var(--c-dark)) * 100%), #ededed);
 }
 
-@keyframes glitch-hard {
-  0% { text-shadow: 3px 0 #ff00ff, -3px 0 #00ffff; transform: translate(0); clip-path: inset(0 0 0 0); }
-  10% { text-shadow: -8px 4px #ff00ff, 8px -4px #00ffff; transform: translate(-6px, 3px) skewX(10deg); clip-path: inset(20% 0 30% 0); }
-  20% { text-shadow: 6px -5px #ff00ff, -6px 5px #00ffff, 0 0 30px #ff00ff; transform: translate(5px, -2px) skewX(-8deg); clip-path: inset(50% 0 10% 0); }
-  30% { text-shadow: -10px 6px #ff00ff, 10px -6px #00ffff; transform: translate(-4px, 5px) skewX(12deg) scaleY(1.02); clip-path: inset(10% 0 60% 0); }
-  50% { text-shadow: -5px -5px #ff00ff, 5px 5px #00ffff; transform: translate(0) skewX(0); clip-path: inset(0 0 0 0); }
-  70% { text-shadow: -7px 7px #ff00ff, 7px -7px #00ffff, 0 0 40px #ff00ff; transform: translate(-5px, -3px) skewX(-10deg) scaleX(1.01); clip-path: inset(15% 0 45% 0); }
-  100% { text-shadow: 3px 0 #ff00ff, -3px 0 #00ffff; transform: translate(0); clip-path: inset(0 0 0 0); }
+/* ═══════════════════════════════════════════════
+   STAGE-SPECIFIC EFFECTS
+   data-corruption-stage="0" through "10" on <html>
+   ═══════════════════════════════════════════════ */
+
+/* Stage 1: Barely there — typography drift */
+[data-corruption-stage="1"] body,
+[data-corruption-stage="2"] body {
+  letter-spacing: 0.01em;
 }
 
-.glitch-text { animation: glitch 0.25s infinite; }
-.glitch-text-hard { animation: glitch-hard 0.15s infinite; }
-
-/* ========= SCANLINE (available for mutations) ========= */
-@keyframes scanline {
-  0% { top: -10%; }
-  100% { top: 110%; }
+/* Stage 2: Borders get a warm tint */
+[data-corruption-stage="2"] .border-zinc-100,
+[data-corruption-stage="2"] .border-zinc-200 {
+  border-color: rgba(180, 140, 100, 0.15);
 }
 
-/* ========= ANIMATIONS (available for mutations) ========= */
-@keyframes flicker {
+/* Stage 3: Sections start drifting */
+[data-corruption-stage="3"] .mutation-zone:nth-child(odd) {
+  transform: translateX(1px) rotate(0.1deg);
+  transition: transform 2s ease;
+}
+[data-corruption-stage="3"] .mutation-zone:nth-child(even) {
+  transform: translateX(-1px) rotate(-0.1deg);
+  transition: transform 2s ease;
+}
+
+/* Stage 4: Visible color bleeding, scanlines kicking in */
+[data-corruption-stage="4"] .mutation-zone {
+  transform: translateX(calc((var(--c) - 30) * 0.05px)) rotate(calc((var(--c) - 30) * 0.02deg));
+}
+[data-corruption-stage="4"] h1,
+[data-corruption-stage="4"] h2 {
+  text-shadow: 1px 0 rgba(180, 80, 40, 0.15), -1px 0 rgba(40, 80, 180, 0.1);
+}
+
+/* Stage 5: Sections overlapping, backgrounds shifting */
+[data-corruption-stage="5"] .mutation-zone {
+  margin-top: -2px;
+  margin-bottom: -2px;
+}
+[data-corruption-stage="5"] section {
+  box-shadow: 0 0 30px rgba(150, 100, 50, 0.05);
+}
+
+/* Stage 6: Perspective tilt, font corruption */
+[data-corruption-stage="6"] main {
+  transform: perspective(1200px) rotateX(0.5deg) rotateY(-0.3deg);
+  transition: transform 3s ease;
+}
+[data-corruption-stage="6"] p,
+[data-corruption-stage="6"] span {
+  font-family: var(--font-mono), "Courier New", monospace;
+  transition: font-family 2s;
+}
+
+/* Stage 7: Heavy warping, glitch flicker */
+[data-corruption-stage="7"] main {
+  transform: perspective(800px) rotateX(1deg) rotateY(-0.8deg);
+}
+[data-corruption-stage="7"] body {
+  animation: corruption-flicker 3s infinite;
+}
+[data-corruption-stage="7"] .mutation-zone {
+  transform: translateX(calc(sin(var(--c)) * 3px)) rotate(calc((var(--c) - 60) * 0.04deg));
+}
+
+/* Stage 8: Elements breaking apart */
+[data-corruption-stage="8"] .mutation-zone:nth-child(3n) {
+  transform: rotate(0.5deg) scale(1.01) translateY(-3px);
+}
+[data-corruption-stage="8"] .mutation-zone:nth-child(3n+1) {
+  transform: rotate(-0.8deg) scale(0.99) translateX(5px);
+}
+[data-corruption-stage="8"] .mutation-zone:nth-child(3n+2) {
+  transform: skewX(0.5deg) translateY(2px);
+}
+[data-corruption-stage="8"] main {
+  transform: perspective(600px) rotateX(1.5deg) rotateY(-1.2deg);
+}
+[data-corruption-stage="8"] h1, [data-corruption-stage="8"] h2, [data-corruption-stage="8"] h3 {
+  animation: corruption-glitch-text 0.3s infinite;
+}
+
+/* Stage 9: Near-total corruption */
+[data-corruption-stage="9"] main {
+  transform: perspective(400px) rotateX(2deg) rotateY(-2deg) scale(0.98);
+  animation: corruption-warp 4s ease-in-out infinite;
+}
+[data-corruption-stage="9"] body {
+  animation: corruption-flicker 1.5s infinite;
+}
+[data-corruption-stage="9"] * {
+  transition: none !important;
+}
+
+/* Stage 10: The qwunk */
+[data-corruption-stage="10"] body {
+  animation: corruption-flicker 0.8s infinite, corruption-hue-cycle 5s linear infinite;
+}
+
+/* ═══════════════════════════════════════════════
+   CORRUPTION KEYFRAMES
+   ═══════════════════════════════════════════════ */
+
+@keyframes corruption-flicker {
   0%, 100% { opacity: 1; }
-  93% { opacity: 0.2; }
+  92% { opacity: 1; }
+  93% { opacity: 0.85; }
   94% { opacity: 1; }
-  95.5% { opacity: 0.6; }
-  96% { opacity: 1; }
+  96% { opacity: 0.9; }
+  97% { opacity: 1; }
 }
 
-@keyframes drift {
-  0%, 100% { transform: translateX(0); }
-  50% { transform: translateX(8px); }
+@keyframes corruption-glitch-text {
+  0%, 100% { text-shadow: 2px 0 rgba(200, 50, 50, 0.3), -2px 0 rgba(50, 50, 200, 0.3); transform: translate(0); }
+  25% { text-shadow: -3px 1px rgba(200, 50, 50, 0.4), 3px -1px rgba(50, 50, 200, 0.4); transform: translate(-1px, 1px); }
+  50% { text-shadow: 2px -2px rgba(200, 50, 50, 0.3), -2px 2px rgba(50, 50, 200, 0.3); transform: translate(1px, -1px); }
+  75% { text-shadow: -2px 2px rgba(200, 50, 50, 0.5), 2px -2px rgba(50, 50, 200, 0.5); transform: translate(-2px, 0); }
 }
 
-@keyframes rgb-shift {
-  0% { text-shadow: -2px 0 #ff0000, 2px 0 #00ffff; }
-  33% { text-shadow: 2px -1px #ff0000, -2px 1px #00ff00; }
-  66% { text-shadow: -1px 2px #0000ff, 1px -2px #ff00ff; }
-  100% { text-shadow: -2px 0 #ff0000, 2px 0 #00ffff; }
+@keyframes corruption-warp {
+  0%, 100% { transform: perspective(400px) rotateX(2deg) rotateY(-2deg) scale(0.98); }
+  25% { transform: perspective(400px) rotateX(2.5deg) rotateY(-1deg) scale(0.97); }
+  50% { transform: perspective(400px) rotateX(1.5deg) rotateY(-2.5deg) scale(0.99); }
+  75% { transform: perspective(400px) rotateX(2.2deg) rotateY(-1.8deg) scale(0.98); }
 }
 
-@keyframes warp-pulse {
-  0%, 100% { transform: perspective(800px) rotateX(0deg) rotateY(0deg); }
-  25% { transform: perspective(800px) rotateX(2deg) rotateY(-1deg); }
-  50% { transform: perspective(800px) rotateX(-1deg) rotateY(2deg); }
-  75% { transform: perspective(800px) rotateX(1deg) rotateY(-2deg); }
-}
-
-@keyframes chaos-warp {
-  0%, 100% { transform: perspective(600px) rotateX(0deg) rotateY(0deg) scale(1); }
-  15% { transform: perspective(600px) rotateX(5deg) rotateY(-3deg) scale(1.01); }
-  30% { transform: perspective(600px) rotateX(-3deg) rotateY(5deg) scale(0.99); }
-  60% { transform: perspective(600px) rotateX(-2deg) rotateY(-4deg) scale(0.98); }
-  90% { transform: perspective(600px) rotateX(-4deg) rotateY(-2deg) scale(1); }
-}
-
-@keyframes hue-rotate {
+@keyframes corruption-hue-cycle {
   from { filter: hue-rotate(0deg); }
   to { filter: hue-rotate(360deg); }
 }
 
-@keyframes tear {
-  0%, 100% { clip-path: inset(0 0 0 0); }
-  10% { clip-path: inset(10% 0 0 0); transform: translateX(5px); }
-  30% { clip-path: inset(30% 0 30% 0); transform: translateX(8px); }
-  40% { clip-path: inset(0 0 0 0); transform: translateX(0); }
+/* ═══════════════════════════════════════════════
+   ANIMATION CLASSES (available for LLM mutations)
+   ═══════════════════════════════════════════════ */
+
+@keyframes glitch {
+  0% { text-shadow: 2px 0 #ff00ff, -2px 0 #00ffff; transform: translate(0); }
+  20% { text-shadow: -3px 2px #ff00ff, 3px -2px #00ffff; transform: translate(-2px, 2px); }
+  40% { text-shadow: 3px -1px #ff00ff, -3px 1px #00ffff; transform: translate(2px, -1px); }
+  60% { text-shadow: -2px 3px #ff00ff, 2px -3px #00ffff; transform: translate(-1px, 3px) skewX(2deg); }
+  80% { text-shadow: 4px 1px #ff00ff, -4px -1px #00ffff; transform: translate(3px, -2px); }
+  100% { text-shadow: 2px 0 #ff00ff, -2px 0 #00ffff; transform: translate(0); }
 }
 
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+@keyframes glitch-hard {
+  0% { text-shadow: 3px 0 #ff00ff, -3px 0 #00ffff; transform: translate(0); clip-path: inset(0); }
+  10% { text-shadow: -8px 4px #ff00ff, 8px -4px #00ffff; transform: translate(-6px, 3px) skewX(10deg); clip-path: inset(20% 0 30% 0); }
+  50% { text-shadow: -5px -5px #ff00ff, 5px 5px #00ffff; transform: translate(0); clip-path: inset(0); }
+  100% { text-shadow: 3px 0 #ff00ff, -3px 0 #00ffff; transform: translate(0); clip-path: inset(0); }
 }
 
-@keyframes button-pulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.3); }
-  50% { box-shadow: 0 0 40px rgba(0, 255, 255, 0.6), 0 0 80px rgba(0, 255, 255, 0.2); }
-}
-
-@keyframes button-pulse-chaos {
-  0%, 100% { box-shadow: 0 0 30px rgba(255, 0, 255, 0.5); }
-  50% { box-shadow: 0 0 60px rgba(255, 0, 255, 0.8), 0 0 120px rgba(255, 0, 255, 0.3); }
-}
+@keyframes scanline { 0% { top: -10%; } 100% { top: 110%; } }
+@keyframes drift { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(8px); } }
+@keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 .glitch-text { animation: glitch 0.25s infinite; }
 .glitch-text-hard { animation: glitch-hard 0.15s infinite; }
-.warp-container { animation: warp-pulse 8s ease-in-out infinite; }
-.chaos-container { animation: chaos-warp 3s ease-in-out infinite, hue-rotate 10s linear infinite; }
-.rgb-text { animation: rgb-shift 0.5s infinite; }
-.tear-effect { animation: tear 4s infinite; }
-.qwunk-button { animation: button-pulse 2s ease-in-out infinite; }
-.qwunk-button-chaos { animation: button-pulse-chaos 1s ease-in-out infinite; }
+.warp-container { animation: corruption-warp 8s ease-in-out infinite; }
+.rgb-text { animation: corruption-glitch-text 0.5s infinite; }
