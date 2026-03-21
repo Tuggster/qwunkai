@@ -1,0 +1,229 @@
+@import "tailwindcss";
+
+:root {
+  --background: #050505;
+  --foreground: #ededed;
+  --qwunk-magenta: #ff00ff;
+  --qwunk-cyan: #00ffff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Courier New", monospace;
+  overflow-x: hidden;
+}
+
+/* ========= GLITCH TITLE ========= */
+@keyframes glitch {
+  0% { text-shadow: 2px 0 #ff00ff, -2px 0 #00ffff; transform: translate(0); }
+  15% { text-shadow: -5px 3px #ff00ff, 5px -3px #00ffff; transform: translate(-3px, 2px) skewX(4deg); }
+  30% { text-shadow: 5px -2px #ff00ff, -5px 2px #00ffff; transform: translate(3px, -1px) skewX(-2deg); }
+  45% { text-shadow: -3px 4px #ff00ff, 3px -4px #00ffff; transform: translate(-2px, 4px) skewX(6deg); }
+  60% { text-shadow: 6px 2px #ff00ff, -6px -2px #00ffff; transform: translate(4px, -3px) skewX(-4deg); }
+  75% { text-shadow: -4px -3px #ff00ff, 4px 3px #00ffff; transform: translate(-1px, 2px) skewX(2deg); }
+  100% { text-shadow: 2px 0 #ff00ff, -2px 0 #00ffff; transform: translate(0); }
+}
+
+@keyframes glitch-hard {
+  0% { text-shadow: 3px 0 #ff00ff, -3px 0 #00ffff; transform: translate(0); clip-path: inset(0 0 0 0); }
+  10% { text-shadow: -8px 4px #ff00ff, 8px -4px #00ffff; transform: translate(-6px, 3px) skewX(10deg); clip-path: inset(20% 0 30% 0); }
+  20% { text-shadow: 6px -5px #ff00ff, -6px 5px #00ffff, 0 0 30px #ff00ff; transform: translate(5px, -2px) skewX(-8deg); clip-path: inset(50% 0 10% 0); }
+  30% { text-shadow: -10px 6px #ff00ff, 10px -6px #00ffff; transform: translate(-4px, 5px) skewX(12deg) scaleY(1.02); clip-path: inset(10% 0 60% 0); }
+  40% { text-shadow: 8px 3px #ff00ff, -8px -3px #00ffff, 0 0 50px #00ffff; transform: translate(6px, -4px) skewX(-6deg); clip-path: inset(40% 0 20% 0); }
+  50% { text-shadow: -5px -5px #ff00ff, 5px 5px #00ffff; transform: translate(0) skewX(0); clip-path: inset(0 0 0 0); }
+  60% { text-shadow: 12px 2px #ff00ff, -12px -2px #00ffff; transform: translate(8px, 2px) skewX(15deg); clip-path: inset(60% 0 5% 0); }
+  70% { text-shadow: -7px 7px #ff00ff, 7px -7px #00ffff, 0 0 40px #ff00ff; transform: translate(-5px, -3px) skewX(-10deg) scaleX(1.01); clip-path: inset(15% 0 45% 0); }
+  80% { text-shadow: 4px -6px #ff00ff, -4px 6px #00ffff; transform: translate(3px, 4px) skewX(5deg); clip-path: inset(35% 0 25% 0); }
+  90% { text-shadow: -9px 1px #ff00ff, 9px -1px #00ffff, 0 0 60px #00ffff; transform: translate(-7px, -1px) skewX(-12deg); clip-path: inset(5% 0 55% 0); }
+  100% { text-shadow: 3px 0 #ff00ff, -3px 0 #00ffff; transform: translate(0); clip-path: inset(0 0 0 0); }
+}
+
+.glitch-text {
+  animation: glitch 0.25s infinite;
+}
+
+.glitch-text-hard {
+  animation: glitch-hard 0.15s infinite;
+}
+
+/* ========= SCANLINE ========= */
+@keyframes scanline {
+  0% { top: -10%; }
+  100% { top: 110%; }
+}
+
+.scanline::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(180deg, transparent, rgba(255, 0, 255, 0.12), transparent);
+  z-index: 100;
+  animation: scanline 3s linear infinite;
+  pointer-events: none;
+}
+
+/* CRT overlay lines */
+.scanline::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.08) 2px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
+  z-index: 99;
+  pointer-events: none;
+}
+
+/* ========= FLICKER / DRIFT ========= */
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.2; }
+  94% { opacity: 1; }
+  95.5% { opacity: 0.6; }
+  96% { opacity: 1; }
+  98% { opacity: 0.8; }
+  98.5% { opacity: 1; }
+}
+
+@keyframes drift {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(8px); }
+}
+
+@keyframes rgb-shift {
+  0% { text-shadow: -2px 0 #ff0000, 2px 0 #00ffff; }
+  33% { text-shadow: 2px -1px #ff0000, -2px 1px #00ff00; }
+  66% { text-shadow: -1px 2px #0000ff, 1px -2px #ff00ff; }
+  100% { text-shadow: -2px 0 #ff0000, 2px 0 #00ffff; }
+}
+
+@keyframes warp-pulse {
+  0%, 100% { transform: perspective(800px) rotateX(0deg) rotateY(0deg); }
+  25% { transform: perspective(800px) rotateX(2deg) rotateY(-1deg); }
+  50% { transform: perspective(800px) rotateX(-1deg) rotateY(2deg); }
+  75% { transform: perspective(800px) rotateX(1deg) rotateY(-2deg); }
+}
+
+@keyframes chaos-warp {
+  0%, 100% { transform: perspective(600px) rotateX(0deg) rotateY(0deg) scale(1); }
+  15% { transform: perspective(600px) rotateX(5deg) rotateY(-3deg) scale(1.01); }
+  30% { transform: perspective(600px) rotateX(-3deg) rotateY(5deg) scale(0.99); }
+  45% { transform: perspective(600px) rotateX(4deg) rotateY(2deg) scale(1.02); }
+  60% { transform: perspective(600px) rotateX(-2deg) rotateY(-4deg) scale(0.98); }
+  75% { transform: perspective(600px) rotateX(3deg) rotateY(3deg) scale(1.01); }
+  90% { transform: perspective(600px) rotateX(-4deg) rotateY(-2deg) scale(1); }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes hue-rotate {
+  from { filter: hue-rotate(0deg); }
+  to { filter: hue-rotate(360deg); }
+}
+
+@keyframes tear {
+  0%, 100% { clip-path: inset(0 0 0 0); }
+  10% { clip-path: inset(10% 0 0 0); transform: translateX(5px); }
+  20% { clip-path: inset(0 0 10% 0); transform: translateX(-3px); }
+  30% { clip-path: inset(30% 0 30% 0); transform: translateX(8px); }
+  40% { clip-path: inset(0 0 0 0); transform: translateX(0); }
+}
+
+.warp-container {
+  animation: warp-pulse 8s ease-in-out infinite;
+}
+
+.chaos-container {
+  animation: chaos-warp 3s ease-in-out infinite, hue-rotate 10s linear infinite;
+}
+
+/* ========= QWUNK CARDS ========= */
+.qwunk-card {
+  border: 1px solid rgba(255, 0, 255, 0.3);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+}
+
+.qwunk-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 0, 255, 0.08), transparent);
+  transition: left 0.5s ease;
+}
+
+.qwunk-card:hover::before {
+  left: 100%;
+}
+
+.qwunk-card:hover {
+  transform: translateY(-5px) scale(1.03) rotateX(2deg);
+  border-color: #ff00ff;
+  box-shadow: 0 0 25px rgba(255, 0, 255, 0.4), inset 0 0 15px rgba(255, 0, 255, 0.05);
+}
+
+.qwunk-card:nth-child(even) {
+  border-color: rgba(0, 255, 255, 0.3);
+}
+
+.qwunk-card:nth-child(even):hover {
+  border-color: #00ffff;
+  box-shadow: 0 0 25px rgba(0, 255, 255, 0.4), inset 0 0 15px rgba(0, 255, 255, 0.05);
+}
+
+/* ========= BUTTON PULSE ========= */
+@keyframes button-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(0, 255, 255, 0.6), 0 0 80px rgba(0, 255, 255, 0.2); }
+}
+
+@keyframes button-pulse-chaos {
+  0%, 100% { box-shadow: 0 0 30px rgba(255, 0, 255, 0.5); }
+  50% { box-shadow: 0 0 60px rgba(255, 0, 255, 0.8), 0 0 120px rgba(255, 0, 255, 0.3), 0 0 200px rgba(255, 0, 255, 0.1); }
+}
+
+.qwunk-button {
+  animation: button-pulse 2s ease-in-out infinite;
+}
+
+.qwunk-button-chaos {
+  animation: button-pulse-chaos 1s ease-in-out infinite;
+}
+
+/* ========= MISC ========= */
+.rgb-text {
+  animation: rgb-shift 0.5s infinite;
+}
+
+.tear-effect {
+  animation: tear 4s infinite;
+}
+
+::selection {
+  background: #ff00ff;
+  color: #000;
+}
