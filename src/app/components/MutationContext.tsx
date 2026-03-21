@@ -74,9 +74,36 @@ export function MutationProvider({ children }: { children: React.ReactNode }) {
   const inflightRef = useRef<Set<string>>(new Set());
 
   // ── Corruption: 0→100 over ~45s, drives whole-page visual degradation ──
-  const [corruption, setCorruption] = useState(0);
-  const corruptionRef = useRef(0);
+  const [corruption, setCorruption] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    try {
+      const raw = localStorage.getItem("qwunk-corruption");
+      if (!raw) return 0;
+      const { value, timestamp } = JSON.parse(raw) as { value: number; timestamp: number };
+      const elapsed = (Date.now() - timestamp) / 1000; // seconds
+      const offlineBonus = Math.min(30, Math.floor(elapsed / 30));
+      return Math.min(100, (value || 0) + offlineBonus);
+    } catch {
+      return 0;
+    }
+  });
+  const corruptionRef = useRef(corruption);
   useEffect(() => { corruptionRef.current = corruption; }, [corruption]);
+
+  // Debounce-save corruption + timestamp to localStorage
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      try {
+        localStorage.setItem(
+          "qwunk-corruption",
+          JSON.stringify({ value: corruption, timestamp: Date.now() })
+        );
+      } catch { /* storage full or unavailable */ }
+    }, 1000);
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current); };
+  }, [corruption]);
 
   const addCorruption = useCallback((amount: number) => {
     setCorruption((c) => Math.min(100, c + amount));

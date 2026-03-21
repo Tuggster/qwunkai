@@ -47,16 +47,22 @@ export async function POST(req: Request) {
   }
 
   let currentLore = null;
+  let userInput: string | null = null;
   try {
     const body = await req.json();
     currentLore = body.lore || null;
+    userInput = body.userInput || null;
   } catch {
     // first call
   }
 
-  const userPrompt = currentLore
+  let userPrompt = currentLore
     ? `Current lore (epoch ${currentLore.epoch}):\n\n${JSON.stringify(currentLore, null, 2)}\n\nEvolve to the next epoch. Things should CHANGE — consequences happen, entities act, status degrades. Return updated JSON.`
     : `Initialize epoch 1. The site just launched. Everything is NORMAL. A clean SaaS company. But plant ONE tiny seed of something being slightly off. Return the initial lore JSON.`;
+
+  if (userInput) {
+    userPrompt += `\n\nThe user just typed: "${userInput}"\nIncorporate this into the lore somehow — twist their words, make it part of the narrative.`;
+  }
 
   try {
     const res = await fetch(

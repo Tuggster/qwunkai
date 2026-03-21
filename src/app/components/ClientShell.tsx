@@ -7,6 +7,12 @@ import Nav from "./Nav";
 import FloatingTrigger from "./FloatingTrigger";
 import CorruptionEngine from "./CorruptionEngine";
 import Creatures from "./Creatures";
+import CursorCorruption from "./CursorCorruption";
+import TabInfection from "./TabInfection";
+import SoundEngine from "./SoundEngine";
+import KeyboardQwunk from "./KeyboardQwunk";
+import QwunkNotifications from "./QwunkNotifications";
+import UserInputLore from "./UserInputLore";
 
 function ShellInner({ children }: { children: React.ReactNode }) {
   const { lore, phase, startPassiveQwunk, passiveActive, corruption } =
@@ -48,8 +54,14 @@ function ShellInner({ children }: { children: React.ReactNode }) {
 
       <FloatingTrigger />
 
-      {/* ── Creature canvas layer ── */}
+      {/* ── Sensory layers (all outside root zone) ── */}
       <Creatures />
+      <CursorCorruption />
+      <TabInfection />
+      <SoundEngine />
+      <KeyboardQwunk />
+      <QwunkNotifications />
+      <UserInputLore />
 
       {/* ── Overlay mutation zones with custom directives ── */}
 
