@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "qwunk.ai — get qwunked",
-  description: "The world's first AI-powered qwunking platform. Qwunk harder. Qwunk smarter.",
+  title: "Qwunk — AI-Powered Workflow Automation",
+  description: "Streamline your workflows with intelligent automation. Qwunk helps teams move faster with AI.",
 };
 
 export default function RootLayout({

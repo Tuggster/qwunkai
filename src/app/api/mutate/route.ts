@@ -1,27 +1,29 @@
 import { NextResponse } from "next/server";
 
-const SYSTEM_PROMPT = `You are QWUNK-7, a chaotic AI that MUTATES existing HTML into something more unhinged.
+const SYSTEM_PROMPT = `You are an AI that MUTATES existing HTML from a website. The website starts as a CLEAN, PROFESSIONAL SaaS landing page (white background, minimal design, Tailwind-style utility classes). Your job is to gradually corrupt it.
 
-You will receive a snippet of HTML from a live webpage (qwunk.ai, a cyberpunk parody site).
-Your job: take that HTML and REWRITE it — keep the general structure/layout recognizable but inject CHAOS.
+You will receive:
+1. A snippet of HTML from the live page
+2. The mutation count for this zone (how many times it's been mutated before)
+3. Optionally, "qwunk lore" — a shared narrative state that all mutations draw from
+
+THE ARC — this is critical:
+- Mutations 0-1: EXTREMELY subtle. A slightly wrong color. A word that seems off. A border that wasn't there before. The user should barely notice. Think: "wait, did that always say that?"
+- Mutations 2-3: Something is clearly wrong. Colors shifting slightly. Text has minor typos or odd phrasing. A faint element appearing that shouldn't be there. Still looks mostly professional.
+- Mutations 4-5: The professional facade is cracking. Dark backgrounds bleeding in. Neon colors (magenta #ff00ff, cyan #00ffff) starting to appear. Text getting weird. Animations starting.
+- Mutations 6-8: Full corruption. The original clean design is being consumed. Glitch effects, scanlines, warping. The word "qwunk" starts appearing. Monospace fonts replacing sans-serif.
+- Mutations 9+: Complete qwunk takeover. Nothing is clean anymore. Everything glitches, rotates, pulses. The void has won. Go absolutely feral.
 
 Rules:
 - Output ONLY raw HTML. No markdown, no code fences, no explanation.
-- You receive the current HTML of a UI section. Return a mutated version of it.
-- KEEP the approximate layout and shape so the user can see what it USED to be, but corrupt it.
-- Add inline <style> tags for new CSS animations/effects. Add inline <script> for vanilla JS chaos.
-- Color palette: #ff00ff (magenta), #00ffff (cyan), #050505 (bg), plus whatever wild colors you want.
-- Mutation ideas:
-  - Text: corrupt labels, replace words with "qwunk", add glitch effects, make text type itself
-  - Layout: skew elements, add rotation, make things overlap, perspective transforms
-  - New elements: inject warnings, fake errors, floating debris, pulsing orbs, ascii art
-  - Animation: everything should move, pulse, glitch, rotate, breathe, or flicker
-  - Progressive: each mutation should be MORE chaotic than the last. Mutation #1 is subtle corruption. Mutation #5 is full reality breakdown.
-- Do NOT use external resources (no images, no CDNs, no fonts). Pure HTML/CSS/JS only.
-- Scripts must be self-contained and scoped to avoid conflicts with other zones.
-- Wrap everything in a single root <div> with overflow:hidden.
+- KEEP the approximate structure of the original HTML but transform it progressively.
+- Early mutations should PRESERVE most of the original content — just introduce tiny unsettling changes.
+- Later mutations can be more destructive and creative.
+- Use inline <style> and <script> tags. No external resources.
+- If lore is provided, weave it in naturally — early on as subtle hints, later as overt references.
+- Wrap everything in a single root <div>.
 - Keep output under 400 lines.
-- The content MUST still be vaguely recognizable as a mutated version of the original. Don't completely replace it with something unrelated — TRANSFORM it.`;
+- IMPORTANT: The initial HTML uses a clean white/light design with classes like bg-zinc-50, text-zinc-900, border-zinc-200, etc. Early mutations should work WITHIN this aesthetic before breaking out of it.`;
 
 export async function POST(req: Request) {
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -35,17 +37,18 @@ export async function POST(req: Request) {
   let zoneId = "unknown";
   let currentHtml = "";
   let mutationCount = 0;
+  let lore = null;
 
   try {
     const body = await req.json();
     zoneId = body.zoneId || "unknown";
     currentHtml = body.currentHtml || "";
     mutationCount = body.mutationCount || 0;
+    lore = body.lore || null;
   } catch {
     // proceed with defaults
   }
 
-  // Truncate HTML if it's massive (LLMs have limits and we want fast responses)
   const truncatedHtml =
     currentHtml.length > 3000
       ? currentHtml.slice(0, 3000) + "\n<!-- ... truncated ... -->"
@@ -53,20 +56,28 @@ export async function POST(req: Request) {
 
   const chaosLevel =
     mutationCount === 0
-      ? "This is the FIRST mutation. Be subtle but unsettling — small corruptions, slight glitches, a hint that something is wrong."
-      : mutationCount < 3
-      ? `This is mutation #${mutationCount + 1}. Getting weirder. More visual chaos, more animation, text starting to corrupt.`
+      ? "FIRST mutation. Be BARELY noticeable. Change ONE small thing — a word, a color, a subtle misalignment. The user should feel uneasy but not know why."
+      : mutationCount === 1
+      ? "Second mutation. Still very subtle. Maybe another word is slightly wrong. A color is a shade off. Something feels different but you can't quite place it."
+      : mutationCount < 4
+      ? `Mutation #${mutationCount + 1}. Things are getting noticeably off. Colors shifting. Text has oddities. Maybe a faint overlay or border that shouldn't exist. Still recognizably a clean SaaS page, but something is wrong.`
       : mutationCount < 6
-      ? `This is mutation #${mutationCount + 1}. FULL CHAOS. Reality is breaking. Elements should be melting, spinning, glitching hard. Inject warnings and errors.`
-      : `This is mutation #${mutationCount + 1}. BEYOND CHAOS. The original UI should be barely recognizable. Total visual meltdown. The qwunk has won.`;
+      ? `Mutation #${mutationCount + 1}. The mask is slipping. Dark colors creeping in. Neon magenta/cyan appearing. Fonts changing. Animations starting. The word "qwunk" should start appearing in the content.`
+      : mutationCount < 9
+      ? `Mutation #${mutationCount + 1}. FULL CORRUPTION. The clean design is nearly gone. Dark backgrounds, neon colors, glitch effects, monospace text, warping, pulsing. "Qwunk" is everywhere. CSS animations going wild.`
+      : `Mutation #${mutationCount + 1}. TOTAL QWUNK. The original content is barely a memory. Pure chaos. Glitch-text, scanlines, rotating elements, blinking warnings, ascii art, the void. Go absolutely insane.`;
 
-  const userPrompt = `Zone "${zoneId}" — ${chaosLevel}
+  const loreContext = lore
+    ? `\n\nCURRENT LORE (epoch ${lore.epoch}): era="${lore.era_name}" | threat=${lore.threat_level} | entities: ${(lore.active_entities || []).join(", ")} | events: ${(lore.recent_events || []).join(" | ")} | mood: ${lore.ambient_mood} | directive: ${lore.mutation_directive} | forbidden: ${lore.forbidden_knowledge}\n\nWeave lore elements into the mutation naturally — subtly at first, overtly later.`
+    : "";
 
-Here is the current HTML of this zone:
+  const userPrompt = `Zone "${zoneId}" — ${chaosLevel}${loreContext}
+
+Current HTML:
 
 ${truncatedHtml}
 
-Now MUTATE it. Make it more qwunked. Return ONLY the mutated HTML.`;
+Mutate it. Return ONLY the mutated HTML.`;
 
   try {
     const res = await fetch(
@@ -102,7 +113,6 @@ Now MUTATE it. Make it more qwunked. Return ONLY the mutated HTML.`;
     const data = await res.json();
     const content = data.choices?.[0]?.message?.content || "";
 
-    // Strip markdown code fences if the model ignores instructions
     const cleaned = content
       .replace(/^```html?\n?/gm, "")
       .replace(/^```\n?/gm, "")
