@@ -323,16 +323,18 @@ export function MutationProvider({ children }: { children: React.ReactNode }) {
     setPassiveActive(false);
   }, []);
 
-  // Per-zone auto timers (skip in qwunk phase)
+  // Per-zone auto timers
+  // In qwunk phase: skip page-content zones but keep overlay/ambient zones alive
   useEffect(() => {
     const checkAutoZones = setInterval(() => {
-      if (phaseRef.current === "qwunk") return;
       for (const [id, zone] of zonesRef.current) {
         if (id === "__root__") continue;
         if (zone.autoInterval && !autoTimersRef.current.has(id)) {
           const jitter = Math.random() * 5000;
           const timer = setInterval(() => {
-            if (phaseRef.current === "qwunk") return;
+            // In qwunk phase, only fire for overlay/ambient zones (they live outside root)
+            const isOverlay = zone.tags.includes("overlay") || zone.tags.includes("ambient") || zone.tags.includes("passive");
+            if (phaseRef.current === "qwunk" && !isOverlay) return;
             doMutate(zone);
           }, zone.autoInterval + jitter);
           autoTimersRef.current.set(id, timer);

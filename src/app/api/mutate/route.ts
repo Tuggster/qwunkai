@@ -121,16 +121,40 @@ export async function POST(req: Request) {
     systemPrompt = ROOT_SYSTEM_PROMPT;
 
     const rootDirections = [
-      "A fake operating system desktop. Draggable windows with lore content inside. A working (but wrong) clock. A file manager showing cursed files you can 'open'. A recycle bin that won't empty. A settings panel where toggles do absurd visual things. Use warm amber, cream, and deep brown. 90s/2000s OS aesthetic.",
-      "An interactive terminal where the user can actually TYPE COMMANDS and get unhinged responses. Commands like 'help', 'ls', 'whoami', 'qwunk' all do different surreal things. A Three.js scene running behind it as a screensaver that reacts to commands. Use olive green on black. Retro CRT aesthetic.",
-      "A fake email inbox. Clickable emails from lore entities with increasingly unhinged content. A compose button that lets the user write to 'the qwunk' via a real textarea. Reply-all spawns more windows. Use sterile white and grey with one alarming accent color. Corporate horror.",
-      "A surreal map/floor plan the user can pan around by dragging. Different 'rooms' with different aesthetics. Clicking a room zooms in and shows interactive content. Hovering reveals hidden text. Use blueprint blue on cream. Architectural/schematic feel.",
-      "A fake social media feed with posts from lore entities. The user can 'like' posts (likes do weird things). A working comment box where typing changes the page. Infinite scroll that gets progressively more wrong. Use pastel palette gone sour — muted pink, grey-green, off-white.",
-      "A Three.js 3D gallery space the user can orbit around (OrbitControls). Floating 'artworks' that are interactive — click one and it expands into a full experience. Each artwork is a different mini-interaction. Use gallery white with dramatic colored lighting.",
-      "A fake weather/radar interface. An interactive 'radar' (canvas) the user can scrub through time. Each 'frame' shows a different anomaly. A forecast section with increasingly wrong predictions. Clickable city names from the lore. Use weather-map greens, yellows, reds on dark grey.",
-      "A fake shopping/e-commerce page selling impossible qwunk products. Working cart — add items and the total is always wrong. Product images are canvas-generated abstract art. Reviews from lore entities. A checkout flow that goes nowhere good. Use clean e-commerce white with subtle wrongness.",
-      "A music player / radio interface. A Three.js audio visualizer (without actual audio — fake it with sine waves). Clickable 'stations' that change the visual aesthetic entirely. A playlist of song titles from lore. Draggable EQ sliders that warp the page. Use dark grey with warm gold accents.",
-      "A fake wiki/encyclopedia about qwunk. Clickable cross-referenced articles. Some links lead to real content, others to dead ends or recursive loops. An editable section where the user can 'contribute'. A revision history showing impossible timestamps. Use Wikipedia beige with serif fonts.",
+      // OS / Desktop
+      "A fake operating system desktop. Draggable windows with lore content inside. A working (but wrong) clock. A file manager showing cursed files. A settings panel where toggles do absurd visual things. Warm amber, cream, deep brown. 90s/2000s OS aesthetic.",
+      "A Linux terminal. The user can TYPE COMMANDS ('help', 'ls', 'cat readme', 'qwunk', 'sudo rm -rf /') and get unhinged responses. A Three.js screensaver behind it that reacts to commands. Olive green on black CRT.",
+      // Social / Communication
+      "A dating app for lore entities. Swipeable profiles with canvas-generated 'photos'. A match screen with confetti. Chat with a matched entity via textarea. Coral pink and warm cream.",
+      "A fake social media feed. Posts from lore entities. 'Like' buttons do weird visual things. A comment box where typing changes the page itself. Pastel palette gone sour.",
+      "A group chat interface. Multiple lore entities arguing. The user can type messages that the entities react to. Typing indicators that never stop. Messages that edit themselves. Clean white with colored bubbles.",
+      // Games
+      "A clicker/idle game. Click a big qwunk orb to generate 'qwunk points'. Buy upgrades that visually change the page. A prestige system. Leaderboard of lore entities. Pixel art aesthetic, warm 8-bit palette.",
+      "A text adventure. 'You are in a dark room. There is a door.' The user types commands. Choices matter — different paths, different visual themes. A canvas illustration that changes with each scene. Parchment and ink aesthetic.",
+      "A fake Minesweeper/Solitaire but the rules are wrong. Clicking tiles reveals lore fragments, entity sightings, or visual effects. Some tiles spawn new elements on the page. Retro Windows grey.",
+      // Data / Monitoring
+      "A mission control dashboard. Multiple live-updating panels: a fake radar (canvas), scrolling logs, a map with blinking dots, vitals that flatline. Everything is monitoring 'the qwunk'. Dark blue-grey with amber and red accents.",
+      "A stock trading terminal for $QWUNK. A canvas chart with wildly volatile price action. Buy/sell buttons. A ticker of other fake qwunk-related stocks. Breaking news from lore entities. Bloomberg terminal black and green.",
+      "A fake weather radar. Canvas-drawn radar sweep. Different 'frames' show anomalies. Forecast section with wrong predictions. Clickable city names. Weather-map greens, yellows, reds on dark grey.",
+      // Creative / Media
+      "A music player / radio. A canvas audio visualizer (fake it with sine waves). Clickable 'stations' that change the entire visual style. Playlist of impossible song titles. Draggable EQ sliders that warp the page. Dark grey with warm gold.",
+      "A TV channel surfer. A big 'screen' that shows different 'channels' — each channel is a mini canvas scene (static, a fake news broadcast, a test pattern, a nature doc gone wrong). Channel up/down buttons. Scanlines. Retro TV bezel.",
+      "An art program. A drawable canvas area (mousedown painting). Color picker. Brush size slider. But the canvas paints back — it adds its own strokes. Your drawings get incorporated into lore. White workspace.",
+      // E-commerce / Corporate
+      "A shopping page selling impossible products. Working cart with wrong totals. Product images are canvas-generated abstract art. Reviews from lore entities. A checkout that goes nowhere good. Clean e-commerce white.",
+      "A fake corporate intranet. Employee directory of lore entities with hover cards. A 'company announcements' feed. A room booking system where all rooms are named wrong. Office blue and grey.",
+      // Knowledge / Documentation
+      "A wiki about qwunk. Cross-referenced clickable articles. Some links lead to content, others loop back or hit dead ends. An editable section. Revision history with impossible timestamps. Wikipedia beige, serif fonts.",
+      "A fake research paper viewer. An academic paper about qwunk with abstract, charts (canvas), citations. Clickable citations lead to other fake papers. A peer review comment section. Scientific white, serif, clean.",
+      // Spatial / Exploration
+      "A dungeon map the user can pan by dragging. Different rooms with different aesthetics. Clicking a room zooms in and shows interactive content. Hover reveals hidden text. Blueprint blue on cream.",
+      "A planetarium. Three.js starfield the user can orbit (OrbitControls). Clickable 'constellations' named after lore entities. Click one to see its story. A search field to find entities. Deep indigo with star-white.",
+      "An underwater scene. Three.js with blue fog and floating objects. Bioluminescent particles. Click objects to 'examine' them — they show lore text. Slow, dreamlike. Deep ocean blues and teals.",
+      // Surreal / Abstract
+      "A room of doors. Each door is a different color/style. Clicking a door opens it to a mini-scene (canvas, CSS animation, or DOM). Some doors are locked. One door opens to another set of doors. Warm wooden palette.",
+      "A fake loading screen that never finishes — but it's interactive. Different loading bars, spinners, status messages that you can click to 'skip' (skipping just adds more loaders). Progress bars that go backwards. Clean corporate grey.",
+      "An infinite zoom. A canvas that continuously zooms into itself, revealing new scenes at each level. The user can click to zoom faster or drag to change the zoom target. Fractal-like. Muted earth tones.",
+      "A fortune teller / magic 8-ball. Click the orb (Three.js sphere with shader). It shakes and reveals a lore-based prophecy. A tarot card drawer. A crystal ball that shows canvas-rendered visions. Deep purple and gold.",
     ];
     const direction = rootDirections[Math.floor(Math.random() * rootDirections.length)];
 
@@ -144,7 +168,29 @@ Previous page HTML (for reference/mockery only — do NOT preserve its structure
 ${truncatedHtml.slice(0, 3000)}
 
 Build it. Return ONLY HTML.`;
+  } else if (directive) {
+    // ── DIRECTIVE ZONE: skip the subtle arc, just build what the directive says ──
+    systemPrompt = `You are an AI that creates HTML widgets/overlays for a surreal, corrupting website. You receive a DIRECTIVE describing exactly what to build. Build it.
+
+Rules:
+- Output ONLY raw HTML with inline <style> and <script>. No markdown. No fences.
+- Wrap in a single root <div>.
+- Scripts are self-contained. window.THREE (Three.js) is available globally.
+- Use requestAnimationFrame for animations.
+- Be CREATIVE. Each time you're called, create something DIFFERENT even for the same directive.
+- Use varied color palettes — not just dark+neon. Try warm ambers, muted pastels, acid greens, deep reds.
+- If lore is provided, weave it in naturally.
+- IMPORTANT: The output must be VISIBLE and INTERESTING. Not an empty div. Not a subtle change. Create something the user will NOTICE.`;
+
+    userPrompt = `DIRECTIVE: ${directive}
+
+This is generation #${mutationCount + 1} for this zone. Make it COMPLETELY DIFFERENT from previous generations. Be creative and surprising.${loreContext}
+
+${truncatedHtml ? `Current content (replace entirely with something new):\n${truncatedHtml.slice(0, 500)}` : "This zone is empty. Create something from scratch."}
+
+Build it. Return ONLY HTML.`;
   } else {
+    // ── NORMAL ZONE: gradual corruption arc ──
     systemPrompt = ZONE_SYSTEM_PROMPT;
     const chaosLevel =
       mutationCount === 0
@@ -159,11 +205,7 @@ Build it. Return ONLY HTML.`;
         ? `Mutation #${mutationCount + 1}. FULL CORRUPTION. Dark backgrounds, neon, glitch effects. Use canvas/WebGL for dynamic visuals.`
         : `Mutation #${mutationCount + 1}. TOTAL MELTDOWN. Go insane. Use Three.js (window.THREE) or WebGL for 3D chaos.`;
 
-    const directiveStr = directive
-      ? `\n\nSPECIAL DIRECTIVE FOR THIS ZONE: ${directive}\nFollow this directive. It overrides general mutation guidance.`
-      : "";
-
-    userPrompt = `Zone "${zoneId}" — ${chaosLevel}${directiveStr}${loreContext}
+    userPrompt = `Zone "${zoneId}" — ${chaosLevel}${loreContext}
 
 Current HTML:
 ${truncatedHtml}

@@ -6,7 +6,10 @@
       "WebFetch(domain:qwunk.qwunk.com)",
       "Bash(gh auth:*)",
       "Bash(railway whoami:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(gh repo:*)",
+      "Bash(railway status:*)"
     ]
   }
 }
