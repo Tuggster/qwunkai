@@ -71,7 +71,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
           name="overlay-bg"
           autoMutateMs={10000}
           tags={["passive", "overlay"]}
-          directive="Create a full-viewport background using <canvas> or CSS gradients. Use requestAnimationFrame for animation. Ideas: slow-moving noise, breathing gradient, subtle particle field, rippling water, starfield, aurora borealis, fog. Keep it atmospheric, not overwhelming. It sits BEHIND all content. Use varied, interesting color palettes — not just dark+neon. Match the lore mood."
+          directive="Create a full-viewport background using <canvas> or CSS gradients. Use requestAnimationFrame for animation. Ideas: slow-moving noise, breathing gradient, subtle particle field, rippling water, starfield, aurora borealis, fog. Keep it atmospheric, not overwhelming. It sits BEHIND all content. Use varied, interesting color palettes — not just dark+neon. IMPORTANT: keep it subtle enough that overlaid text remains readable."
         >
           <div />
         </MutationZone>
@@ -167,12 +167,12 @@ function ShellInner({ children }: { children: React.ReactNode }) {
 
       {/* Full-screen overlay: appears late, semi-transparent chaos layer */}
       {corruption >= 55 && (
-        <div className="fixed inset-0 z-[9970] pointer-events-none overflow-hidden" style={{ opacity: Math.min((corruption - 55) * 0.02, 0.7) }}>
+        <div className="fixed inset-0 z-[9970] pointer-events-none overflow-hidden" style={{ opacity: Math.min((corruption - 55) * 0.015, 0.45) }}>
           <MutationZone
             name="overlay-fullscreen"
             autoMutateMs={15000}
             tags={["passive", "overlay"]}
-            directive="Create a semi-transparent full-screen overlay effect using <canvas> or CSS. Ideas: a WebGL shader (noise, fractals, reaction-diffusion), falling characters/symbols, a ripple effect that follows mouse position (use pointer-events:none but track mouse via document event), geometric patterns that evolve, a Three.js particle system. This sits OVER the page content as a visual filter. Keep it semi-transparent. Use unique colors."
+            directive="Create a semi-transparent full-screen overlay using <canvas> or CSS. CRITICAL: The root div and canvas background MUST be transparent (background: transparent or rgba(0,0,0,0)). Do NOT use any solid/opaque backgrounds — this layer sits OVER other content and must let it show through. Ideas: a canvas with transparent background drawing floating symbols, particles, geometric shapes, or lines; a CSS overlay with mix-blend-mode and transparent background; a Three.js scene with alpha:true and clearColor alpha 0. Only draw the ELEMENTS (shapes, particles, text), not any background fill."
           >
             <div />
           </MutationZone>
