@@ -140,10 +140,24 @@ export function MutationProvider({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(startDelay);
   }, []);
 
-  // Mutation cache — persists across page navigations
+  // Mutation cache — persists across page navigations within a session.
+  // Bump CACHE_VERSION to nuke stale caches on deploy.
+  const CACHE_VERSION = "qwunk-v3";
   const mutationCacheRef = useRef<Map<string, string>>(new Map());
-  // Also store per-zone mutation counts so they persist
   const zoneMutationCountsRef = useRef<Map<string, number>>(new Map());
+
+  // On mount: clear corruption + caches if version changed
+  useEffect(() => {
+    const storedVersion = localStorage.getItem("qwunk-cache-version");
+    if (storedVersion !== CACHE_VERSION) {
+      localStorage.setItem("qwunk-cache-version", CACHE_VERSION);
+      localStorage.removeItem("qwunk-corruption");
+      mutationCacheRef.current.clear();
+      zoneMutationCountsRef.current.clear();
+      setCorruption(0);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Lore
   const [lore, setLore] = useState<QwunkLore | null>(null);
