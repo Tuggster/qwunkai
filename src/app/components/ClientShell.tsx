@@ -7,7 +7,7 @@ import Nav from "./Nav";
 import FloatingTrigger from "./FloatingTrigger";
 import CorruptionEngine from "./CorruptionEngine";
 import Creatures from "./Creatures";
-import CursorCorruption from "./CursorCorruption";
+// CursorCorruption removed — permanent trails were filling the screen
 import TabInfection from "./TabInfection";
 import SoundEngine from "./SoundEngine";
 import KeyboardQwunk from "./KeyboardQwunk";
@@ -56,7 +56,7 @@ function ShellInner({ children }: { children: React.ReactNode }) {
 
       {/* ── Sensory layers (all outside root zone) ── */}
       <Creatures />
-      <CursorCorruption />
+      {/* CursorCorruption removed */}
       <TabInfection />
       <SoundEngine />
       <KeyboardQwunk />
