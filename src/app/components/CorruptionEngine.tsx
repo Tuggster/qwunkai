@@ -11,7 +11,6 @@ import { useMutation } from "./MutationContext";
  */
 export default function CorruptionEngine() {
   const { corruption, phase } = useMutation();
-  const noiseCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const particleCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const particleAnimRef = useRef<number>(0);
   const prevStageRef = useRef(0);
@@ -84,34 +83,7 @@ export default function CorruptionEngine() {
     }
   }, [corruption]);
 
-  // ── Noise canvas overlay ──
-  const setupNoise = useCallback(() => {
-    if (noiseCanvasRef.current) return;
-    const canvas = document.createElement("canvas");
-    canvas.width = 256;
-    canvas.height = 256;
-    canvas.style.cssText =
-      "position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9998;opacity:0;mix-blend-mode:overlay;transition:opacity 0.5s;";
-    canvas.id = "corruption-noise";
-    document.body.appendChild(canvas);
-    noiseCanvasRef.current = canvas;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const imageData = ctx.createImageData(256, 256);
-    const animate = () => {
-      for (let i = 0; i < imageData.data.length; i += 4) {
-        const v = Math.random() * 255;
-        imageData.data[i] = v;
-        imageData.data[i + 1] = v;
-        imageData.data[i + 2] = v;
-        imageData.data[i + 3] = 255;
-      }
-      ctx.putImageData(imageData, 0, 0);
-      requestAnimationFrame(animate);
-    };
-    animate();
-  }, []);
+  // Noise canvas removed — it was stacking opaque pixels and blacking out the page
 
   // ── Particle canvas overlay ──
   const setupParticles = useCallback(() => {
@@ -173,23 +145,13 @@ export default function CorruptionEngine() {
     const c = corruption;
     const stage = Math.min(10, Math.floor(c / 10));
 
-    // Stage 3+ (c>=25): noise overlay
-    if (c >= 25 && !noiseCanvasRef.current) {
-      setupNoise();
-    }
-    if (noiseCanvasRef.current) {
-      noiseCanvasRef.current.style.opacity = String(
-        Math.min((c - 25) * 0.005, 0.15)
-      );
-    }
-
     // Stage 7+ (c>=65): particles
     if (c >= 65 && !particleCanvasRef.current) {
       setupParticles();
     }
     if (particleCanvasRef.current) {
       particleCanvasRef.current.style.opacity = String(
-        Math.min((c - 65) * 0.03, 0.7)
+        Math.min((c - 65) * 0.02, 0.4)
       );
     }
 
@@ -197,12 +159,11 @@ export default function CorruptionEngine() {
     if (stage !== prevStageRef.current) {
       prevStageRef.current = stage;
     }
-  }, [corruption, setupNoise, setupParticles]);
+  }, [corruption, setupParticles]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      noiseCanvasRef.current?.remove();
       particleCanvasRef.current?.remove();
       cancelAnimationFrame(particleAnimRef.current);
     };

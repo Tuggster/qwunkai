@@ -142,7 +142,7 @@ export function MutationProvider({ children }: { children: React.ReactNode }) {
 
   // Mutation cache — persists across page navigations within a session.
   // Bump CACHE_VERSION to nuke stale caches on deploy.
-  const CACHE_VERSION = "qwunk-v4";
+  const CACHE_VERSION = "qwunk-v5";
   const mutationCacheRef = useRef<Map<string, string>>(new Map());
   const zoneMutationCountsRef = useRef<Map<string, number>>(new Map());
 
